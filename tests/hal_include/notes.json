@@ -1,0 +1,16 @@
+{
+  "_links": {
+    "up": {
+      "href": "/hal_include/index.json",
+      "title": "Up!"
+    },
+    "note": [
+      {
+        "href": "/hal_include/note1.json"
+      },
+      {
+        "href": "/hal_include/note1.json"
+      }
+    ]
+  }
+}

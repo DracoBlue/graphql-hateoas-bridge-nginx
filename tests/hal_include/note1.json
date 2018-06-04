@@ -1,0 +1,8 @@
+{
+  "title": "hi note 1",
+  "_links": {
+    "owner": {
+      "href": "/hal_include/owner3.json"
+    }
+  }
+}

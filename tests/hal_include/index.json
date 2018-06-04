@@ -1,0 +1,7 @@
+{
+  "_links": {
+    "notes": {
+      "href": "/hal_include/notes.json"
+    }
+  }
+}
