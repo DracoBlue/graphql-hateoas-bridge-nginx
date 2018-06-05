@@ -1,0 +1,9 @@
+query {
+  title,
+  id,
+  owner(id: 1) {
+    name,
+    city,
+    id
+  }
+}

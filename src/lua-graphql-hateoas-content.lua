@@ -43,7 +43,6 @@ local graphQLRequest = parseGraphQL(requestBody)
 
 
 ngx.log(ngx.ERR, cjson.encode(graphQLRequest))
-ngx.log(ngx.DEBUG, cjson.encode(graphQLRequest.definitions[1].selectionSet.selections[1].name))
 
 local fragmentDefinitionSelections = {}
 
@@ -57,6 +56,35 @@ local parseFragmentDefinitions = function(graphQLRequest)
 end
 
 parseFragmentDefinitions(graphQLRequest)
+
+evaluateTemplateUriAndAppendArguments = function(templateUri, arguments)
+    local usedArguments = {}
+    local evaluatedUri = templateUri:gsub("{(.+)}", function(input)
+        if (arguments[input] ~= nil) then
+            usedArguments[input] = true
+            return arguments[input]
+        end
+        return "{" .. input .. "}"
+    end)
+    local appendArguments = {}
+
+    for key, value in pairs(arguments) do
+        if (usedArguments[key] == nil) then
+            appendArguments[key] = value
+        end
+    end
+
+    local appendQueryString = ngx.encode_args(appendArguments)
+
+    if (ngx.encode_args(appendArguments) ~= "") then
+        if (evaluatedUri:find("?")) then
+            return evaluatedUri .. "&" .. appendQueryString
+        end
+        return evaluatedUri .. "?" .. appendQueryString
+    end
+
+    return evaluatedUri
+end
 
 local hcPrefix = "https://hateoas-notes.herokuapp.com/rels/"
 
@@ -90,7 +118,10 @@ extractSelectionSetFromValue = function(body, selectionSet)
             local argumentsQueryParts = {}
             if (selection.arguments) then
                 for _, argument in ipairs(selection.arguments) do
-                    argumentsQueryParts[argument.name.value] = argument.value.value
+                    if (argument.kind == "argument")
+                    then
+                        argumentsQueryParts[argument.name.value] = argument.value.value
+                    end
                 end
             end
 
@@ -101,17 +132,13 @@ extractSelectionSetFromValue = function(body, selectionSet)
                     for _, linkValueItem in ipairs(linkValue) do
                         ngx.log(ngx.DEBUG, "link Value: " .. cjson.encode(linkValueItem))
                         local subRequestUri = linkValueItem["href"]
-                        if (selection.arguments) then
-                            subRequestUri = subRequestUri .. "?" .. ngx.encode_args(argumentsQueryParts)
-                        end
+                        subRequestUri = evaluateTemplateUriAndAppendArguments(subRequestUri, argumentsQueryParts)
                         table.insert(root[selection.name.value], mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet))
                     end
                 else
                     ngx.log(ngx.DEBUG, "link Value: " .. cjson.encode(linkValue))
                     local subRequestUri = linkValue["href"]
-                    if (selection.arguments) then
-                        subRequestUri = subRequestUri .. "?" .. ngx.encode_args(argumentsQueryParts)
-                    end
+                    subRequestUri = evaluateTemplateUriAndAppendArguments(subRequestUri, argumentsQueryParts)
                     root[selection.name.value] = mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet)
                 end
             end
