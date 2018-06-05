@@ -1,0 +1,13 @@
+query withFragments {
+	title,
+	id,
+	owner {
+	  ...ownerFields
+	}
+}
+
+fragment ownerFields on Owner {
+	name,
+	city,
+	id
+}

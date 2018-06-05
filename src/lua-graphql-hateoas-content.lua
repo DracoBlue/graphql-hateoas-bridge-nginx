@@ -42,16 +42,37 @@ end
 local graphQLRequest = parseGraphQL(requestBody)
 
 
-ngx.log(ngx.DEBUG, cjson.encode(graphQLRequest))
+ngx.log(ngx.ERR, cjson.encode(graphQLRequest))
 ngx.log(ngx.DEBUG, cjson.encode(graphQLRequest.definitions[1].selectionSet.selections[1].name))
+
+local fragmentDefinitionSelections = {}
+
+local parseFragmentDefinitions = function(graphQLRequest)
+    for _, definition in ipairs(graphQLRequest.definitions) do
+        if (definition.kind == "fragmentDefinition") then
+            ngx.log(ngx.ERR, "found fragmentdefinition: " .. definition.name.value)
+            fragmentDefinitionSelections[definition.name.value] = definition.selectionSet
+        end
+    end
+end
+
+parseFragmentDefinitions(graphQLRequest)
 
 local hcPrefix = "https://hateoas-notes.herokuapp.com/rels/"
 
 extractSelectionSetFromValue = function(body, selectionSet)
     local root = {}
     for _, selection in ipairs(selectionSet.selections) do
-        ngx.log(ngx.DEBUG, "selection (kind:" .. selection.kind .. ", name:" .. selection.name.value .. ")")
+        ngx.log(ngx.ERR, "selection (kind:" .. selection.kind .. ", name:" .. selection.name.value .. ")")
 
+        ngx.log(ngx.ERR, selection.kind)
+        if (selection.kind == "fragmentSpread" and fragmentDefinitionSelections[selection.name.value]) then
+            -- FIXME: check typeCondition, too!
+            local fragmentSpreadRoot = extractSelectionSetFromValue(body, fragmentDefinitionSelections[selection.name.value])
+            for key, value in pairs(fragmentSpreadRoot) do
+                root[key] = value
+            end
+        end
         if (selection.kind == "field") then
             if (body[selection.name.value]) then
                 if (selection.selectionSet) then
