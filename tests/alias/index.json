@@ -1,0 +1,7 @@
+{
+  "_links": {
+    "note": {
+      "href": "/alias/note-{id}.json"
+    }
+  }
+}

@@ -25,7 +25,7 @@ do
 		current_exit_code="${?}"
 	elif [ -f "$TEST_NAME.lua" ]
 	then
-		docker run -it -v `pwd`/../src/parse-graphql.lua:/usr/share/lua/5.1/parse-graphql.lua -v `pwd`/../:/usr/src/app --workdir /usr/src/app --rm graphql-hateoas-bridge-nginx lua5.2 tests/$TEST_NAME.lua > "${TEST_NAME}.result"
+		docker run -it -v `pwd`/../src/parse-graphql.lua:/usr/share/lua/5.1/parse-graphql.lua -v `pwd`/../:/usr/src/app --workdir /usr/src/app --rm graphql-hateoas-bridge-nginx lua5.1 tests/$TEST_NAME.lua > "${TEST_NAME}.result"
 		current_exit_code=0
 	elif [ -f "$TEST_NAME.json" ]
 	then

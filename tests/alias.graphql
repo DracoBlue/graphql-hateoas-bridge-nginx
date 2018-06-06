@@ -1,0 +1,10 @@
+{
+    firstNote: note(id: 1) {
+        title,
+        id
+    }
+    secondNote: note(id: 2) {
+        title,
+        id
+    }
+}

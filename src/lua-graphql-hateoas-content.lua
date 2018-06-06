@@ -114,7 +114,13 @@ local hcPrefix = "https://hateoas-notes.herokuapp.com/rels/"
 extractSelectionSetFromValue = function(body, selectionSet)
     local root = {}
     for _, selection in ipairs(selectionSet.selections) do
-        ngx.log(ngx.ERR, "selection (kind:" .. selection.kind .. ", name:" .. selection.name.value .. ")")
+        local keyName = selection.name.value
+
+        if selection.alias and selection.alias.kind == "alias" then
+            keyName = selection.alias.name.value
+        end
+    
+        ngx.log(ngx.ERR, "selection (kind:" .. selection.kind .. ", name:" .. selection.name.value .. ", keyName: " .. keyName .. ")")
 
         ngx.log(ngx.ERR, selection.kind)
         if (selection.kind == "fragmentSpread" and fragmentDefinitionSelections[selection.name.value]) then
@@ -127,9 +133,9 @@ extractSelectionSetFromValue = function(body, selectionSet)
         if (selection.kind == "field") then
             if (body[selection.name.value]) then
                 if (selection.selectionSet) then
-                    root[selection.name.value] = extractSelectionSetFromValue(body[selection.name.value], selection.selectionSet)
+                    root[keyName] = extractSelectionSetFromValue(body[selection.name.value], selection.selectionSet)
                 else
-                    root[selection.name.value] = body[selection.name.value]
+                    root[keyName] = body[selection.name.value]
                 end
             end
             local linkValue = body["_links"] and (body["_links"][selection.name.value] or body["_links"][hcPrefix .. selection.name.value])
@@ -156,18 +162,18 @@ extractSelectionSetFromValue = function(body, selectionSet)
             if (linkValue) then
                 if (linkValue[1]) then
                     -- poor mans check for an array!
-                    root[selection.name.value] = {}
+                    root[keyName] = {}
                     for _, linkValueItem in ipairs(linkValue) do
                         ngx.log(ngx.DEBUG, "link Value: " .. cjson.encode(linkValueItem))
                         local subRequestUri = linkValueItem["href"]
                         subRequestUri = evaluateTemplateUriAndAppendArguments(subRequestUri, argumentsQueryParts)
-                        table.insert(root[selection.name.value], mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet))
+                        table.insert(root[keyName], mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet))
                     end
                 else
                     ngx.log(ngx.DEBUG, "link Value: " .. cjson.encode(linkValue))
                     local subRequestUri = linkValue["href"]
                     subRequestUri = evaluateTemplateUriAndAppendArguments(subRequestUri, argumentsQueryParts)
-                    root[selection.name.value] = mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet)
+                    root[keyName] = mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet)
                 end
             end
         end
