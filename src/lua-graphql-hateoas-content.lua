@@ -28,6 +28,7 @@ end)()
 ngx.req.read_body()
 
 local requestBody = ngx.req.get_body_data()
+local variables = {}
 
 ngx.log(ngx.DEBUG, "requestBody: " .. requestBody)
 
@@ -35,8 +36,14 @@ local jsonParsedRequestBody, errorMessage = cjson.decode(requestBody)
 
 if (jsonParsedRequestBody and jsonParsedRequestBody.query)
 then
-    ngx.log(ngx.DEBUG, "requestBody was JSON!")
+    ngx.log(ngx.DEBUG, "requestBody was JSON: store query!")
     requestBody = jsonParsedRequestBody.query
+end
+
+if (jsonParsedRequestBody and jsonParsedRequestBody.variables)
+then
+    ngx.log(ngx.DEBUG, "requestBody was JSON: store variables!")
+    variables = jsonParsedRequestBody.variables
 end
 
 local graphQLRequest = parseGraphQL(requestBody)
@@ -45,6 +52,7 @@ local graphQLRequest = parseGraphQL(requestBody)
 ngx.log(ngx.ERR, cjson.encode(graphQLRequest))
 
 local fragmentDefinitionSelections = {}
+local variableDefinitions = {}
 
 local parseFragmentDefinitions = function(graphQLRequest)
     for _, definition in ipairs(graphQLRequest.definitions) do
@@ -56,6 +64,21 @@ local parseFragmentDefinitions = function(graphQLRequest)
 end
 
 parseFragmentDefinitions(graphQLRequest)
+
+local parseVariableDefinitions = function(graphQLRequest)
+    for _, definition in ipairs(graphQLRequest.definitions) do
+        if (definition.variableDefinitions) then
+            for _, variableDefinition in ipairs(definition.variableDefinitions) do
+                if (variableDefinition.kind == "variableDefinition") then
+                    ngx.log(ngx.ERR, "found variableDefinition: " .. variableDefinition.variable.name.value)
+                    variableDefinitions[variableDefinition.variable.name.value] = variableDefinition
+                end
+            end
+        end
+    end
+end
+
+parseVariableDefinitions(graphQLRequest)
 
 evaluateTemplateUriAndAppendArguments = function(templateUri, arguments)
     local usedArguments = {}
@@ -120,7 +143,12 @@ extractSelectionSetFromValue = function(body, selectionSet)
                 for _, argument in ipairs(selection.arguments) do
                     if (argument.kind == "argument")
                     then
-                        argumentsQueryParts[argument.name.value] = argument.value.value
+                        if (argument.value.kind == "variable")
+                        then
+                            argumentsQueryParts[argument.name.value] = variableDefinitions[argument.value.name.value] and variables[argument.value.name.value]
+                        else
+                            argumentsQueryParts[argument.name.value] = argument.value.value
+                        end
                     end
                 end
             end

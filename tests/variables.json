@@ -1,0 +1,7 @@
+{
+  "query": "query withFragments($profilePicSize: Int) {\n  title,\n  id,\n  owner(id: 1) {\n    ...ownerFields\n    profilePic(picSize: $profilePicSize) {\n      src\n    }\n  }\n}\n\nfragment ownerFields on Node {\n  name,\n  city,\n  id\n}",
+  "variables": {
+    "profilePicSize": "42"
+  },
+  "operationName": "withFragments"
+}

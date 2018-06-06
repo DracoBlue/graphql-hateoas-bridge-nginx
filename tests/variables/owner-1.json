@@ -1,0 +1,10 @@
+{
+  "name": "Hans",
+  "city": "Berlin",
+  "id": 3,
+  "_links": {
+    "profilePic": {
+      "href": "/variables/profilePic-{picSize}.json"
+    }
+  }
+}

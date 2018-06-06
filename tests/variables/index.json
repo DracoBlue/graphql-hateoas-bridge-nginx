@@ -1,0 +1,9 @@
+{
+  "_links": {
+    "owner": {
+      "href": "/variables/owner-{id}.json"
+    }
+  },
+  "title": "Hans Town",
+  "id": 2
+}
