@@ -6,10 +6,17 @@ test_errors=0
 cd `dirname $0`
 cd tests
 
+TEST_FILTER='*.txt'
+
+if [ ! -z "$1" ]
+then
+	TEST_FILTER=$1
+fi
+
 # We cannot use while read line here
 # @see http://fvue.nl/wiki/Bash:_Piped_%60while-read'_loop_starts_subshell
 # for further information
-for file in `ls *.txt`
+for file in `ls $TEST_FILTER`
 do
 	TEST_NAME=`echo "$file" | cut -f 1 -d '.'`
 	if [ -f "$TEST_NAME.sh" ]
@@ -18,7 +25,7 @@ do
 		current_exit_code="${?}"
 	elif [ -f "$TEST_NAME.lua" ]
 	then
-		docker run -it -v `pwd`/../src/parse-graphql.lua:/usr/share/lua/5.1/parse-graphql.lua -v `pwd`/../:/usr/src/app --workdir /usr/src/app --rm graphql-hateoas-bridge-nginx lua5.1 tests/$TEST_NAME.lua > "${TEST_NAME}.result"
+		docker run -it -v `pwd`/../src/parse-graphql.lua:/usr/share/lua/5.1/parse-graphql.lua -v `pwd`/../:/usr/src/app --workdir /usr/src/app --rm graphql-hateoas-bridge-nginx lua5.2 tests/$TEST_NAME.lua > "${TEST_NAME}.result"
 		current_exit_code=0
 	elif [ -f "$TEST_NAME.json" ]
 	then
