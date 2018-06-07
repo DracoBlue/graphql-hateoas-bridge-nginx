@@ -1,0 +1,28 @@
+{
+  "_links": {
+    "up": {
+      "href": "/embedded_hal_include/index.json",
+      "title": "Up!"
+    }
+  },
+  "_embedded": {
+    "note": [
+      {
+        "title": "hi note 1",
+        "_links": {
+          "owner": {
+            "href": "/embedded_hal_include/owner3.json"
+          }
+        }
+      },
+      {
+        "title": "hi note 2",
+        "_links": {
+          "owner": {
+            "href": "/embedded_hal_include/owner4.json"
+          }
+        }
+      }
+    ]
+  }
+}

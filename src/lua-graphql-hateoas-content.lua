@@ -139,8 +139,7 @@ extractSelectionSetFromValue = function(body, selectionSet)
                 end
             end
             local linkValue = body["_links"] and (body["_links"][selection.name.value] or body["_links"][hcPrefix .. selection.name.value])
---            local embeddedValue = body["_embedded"] and (body["_embedded"][selection.name.value] or body["_embedded"][hcPrefix .. selection.name.value])
-
+            local embeddedValue = body["_embedded"] and (body["_embedded"][selection.name.value] or body["_embedded"][hcPrefix .. selection.name.value])
 
             ngx.log(ngx.DEBUG, "selection arguments: " .. cjson.encode(selection.arguments))
 
@@ -158,8 +157,17 @@ extractSelectionSetFromValue = function(body, selectionSet)
                     end
                 end
             end
-
-            if (linkValue) then
+            if (embeddedValue) then
+                if (embeddedValue[1]) then
+                    -- poor mans check for an array!
+                    root[keyName] = {}
+                    for _, embeddedValueItem in ipairs(embeddedValue) do
+                        table.insert(root[keyName],extractSelectionSetFromValue(embeddedValueItem, selection.selectionSet))
+                    end
+                else
+                    root[keyName] = extractSelectionSetFromValue(embeddedValue, selection.selectionSet)
+                end
+            elseif (linkValue) then
                 if (linkValue[1]) then
                     -- poor mans check for an array!
                     root[keyName] = {}

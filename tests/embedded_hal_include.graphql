@@ -1,0 +1,17 @@
+{
+  notes(limit: 2, offset: 0) {
+    _links {
+      up {
+        title
+      }
+    }
+  	note {
+  		title,
+  		id,
+  		owner {
+		  username
+		  id
+		}
+  	}
+  }
+}
