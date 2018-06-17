@@ -66,10 +66,11 @@ http {
             gzip off;
             gzip_proxied off;
 
-            proxy_buffering on;
+			proxy_buffer_size          16k;
+			proxy_buffering         off;
 
-            log_subrequest  on;
-            lua_code_cache off;
+            log_subrequest  $NGINX_LOG_SUBREQUEST;
+            lua_code_cache $NGINX_LUA_CODE_CACHE;
 
         	error_log /var/log/nginx/error.log $NGINX_LOG_LEVEL;
 
