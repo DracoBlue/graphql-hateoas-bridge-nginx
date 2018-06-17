@@ -12,6 +12,10 @@ ADD src/lua-graphql-hateoas-header.lua /etc/nginx/lua-graphql-hateoas-header.lua
 ADD src/parse-graphql.lua /usr/share/lua/5.1/parse-graphql.lua
 ENV NGINX_SERVER_NAME=_ \
     NGINX_SERVER_PORT=80 \
+    NGINX_PROXY_CACHE=off \
+    NGINX_PROXY_CACHE_CHUNK_SIZE=100m \
+    NGINX_PROXY_CACHE_SIZE=10g \
+    NGINX_PROXY_CACHE_INACTIVE_TIME=60m \
     NGINX_PROXY_PASS=127.0.0.1:1337 \
     NGINX_PROXY_HOST=127.0.0.1 \
     NGINX_LUA_CODE_CACHE=on \
@@ -20,4 +24,4 @@ ENV NGINX_SERVER_NAME=_ \
     HYPERMEDIA_CONTROL_PREFIXES= \
     GRAPHIQL_API_BASE_URL=/api/
 EXPOSE 80
-CMD envsubst '$$NGINX_PROXY_PASS $$NGINX_SERVER_PORT $$NGINX_SERVER_NAME $$NGINX_LOG_LEVEL $$NGINX_PROXY_HOST $$NGINX_LUA_CODE_CACHE $$$NGINX_LOG_SUBREQUEST $$HYPERMEDIA_CONTROL_PREFIXES' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && envsubst '$$GRAPHIQL_API_BASE_URL' < /usr/share/nginx/html/graphiql/index.template > /usr/share/nginx/html/graphiql/index.html && nginx -g 'daemon off;'
+CMD bash -c "envsubst '\$HYPERMEDIA_CONTROL_PREFIXES `env | grep '^NGINX_' | cut -f 1 -d '=' | sed 's/NGINX/\$NGINX/g' | tr -s ' '`' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && envsubst '\$GRAPHIQL_API_BASE_URL' < /usr/share/nginx/html/graphiql/index.template > /usr/share/nginx/html/graphiql/index.html && nginx -g 'daemon off;'"

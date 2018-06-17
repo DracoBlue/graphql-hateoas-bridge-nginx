@@ -56,6 +56,9 @@ http {
     # gzip_http_version 1.1;
     # gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
+	proxy_cache_path /tmp/nginx-proxy-cache levels=1:2 keys_zone=on:$NGINX_PROXY_CACHE_CHUNK_SIZE max_size=$NGINX_PROXY_CACHE_SIZE inactive=$NGINX_PROXY_CACHE_INACTIVE_TIME use_temp_path=off;
+	variables_hash_max_size 2048;
+
     ##
     # Virtual Host Configs
     ##
@@ -66,7 +69,6 @@ http {
             gzip off;
             gzip_proxied off;
 
-			proxy_buffer_size          16k;
 			proxy_buffering         off;
 
             log_subrequest  $NGINX_LOG_SUBREQUEST;
@@ -76,7 +78,7 @@ http {
 
             add_header "X-Upstream-Cache-Status" $upstream_cache_status always;
 
-            location /graphiql/ {
+            location /graphiql {
             	root /usr/share/nginx/html;
             	index index.html;
             }
@@ -85,6 +87,14 @@ http {
         		internal;
                 rewrite ^/graphql-hateoas-brige-api-gateway/(.*)$ /$1  break;
         		proxy_pass $NGINX_PROXY_PASS;
+
+				proxy_cache $NGINX_PROXY_CACHE;
+				proxy_cache_lock on;
+				proxy_cache_lock_age 60s;
+				proxy_cache_lock_timeout 60s;
+				proxy_cache_min_uses 1;
+				proxy_cache_use_stale error timeout updating;
+
                 proxy_set_header Accept-Encoding "";
                 proxy_set_header Host      $NGINX_PROXY_HOST;
                 proxy_set_header X-Forwarded-Port      80;
