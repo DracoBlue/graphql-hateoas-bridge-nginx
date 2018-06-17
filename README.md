@@ -5,7 +5,105 @@
 
 This is an effort to add a generic graphql endpoint before a hateoas compliant api with nginx's lua module.
 
-## Usage
+## Features:
+
+1. graphql read queries
+2. alias
+3. variables
+4. arguments (mapped to url parameters or uri templates)
+5. fragments
+
+## Unsupported Graphql Features:
+
+1. graphql schema
+2. graphql mutations
+
+## Media Types:
+
+  - [hal](http://stateless.co/hal_specification.html) (links, embedded, but no curries yet)
+
+
+## Installation & Usage with Docker-Compose
+
+Given you have an HAL-API at `https://hateoas-notes.herokuapp.com/api/hal`. Split up
+the url in:
+
+1. proxy pass: `https://hateoas-notes.herokuapp.com`
+2. proxy host: `hateoas-notes.herokuapp.com`
+3. and graphiql api base path: `/api/hal`
+
+If your hypermedia controls in HAL are prefixed like this:
+  `https://hateoas-notes.herokuapp.com/rels/note` 
+and you would like to use `note` directly, then set:
+  `HYPERMEDIA_CONTROL_PREFIXES=https://hateoas-notes.herokuapp.com/rels/`
+
+Setup the `docker-compose.yml` like this:
+```yaml
+services:
+  nginx:
+    build: ./
+    image: graphql-hateoas-bridge-nginx
+    environment:
+      - "NGINX_PROXY_PASS=https://hateoas-notes.herokuapp.com"
+      - "NGINX_PROXY_HOST=hateoas-notes.herokuapp.com"
+      - "GRAPHIQL_API_BASE_URL=/api/hal"
+      - "HYPERMEDIA_CONTROL_PREFIXES=https://hateoas-notes.herokuapp.com/rels/"
+    ports:
+      - "80:80"
+```
+
+Open [http://localhost/graphiql/](http://localhost/graphiql/?query=%7B%0A%20%20notes%20%7B%0A%20%20%20%20note%20%7B%0A%20%20%20%20%20%20title%2C%0A%20%20%20%20%20%20tags%2C%0A%20%20%20%20%20%20owner%20%7B%0A%20%20%20%20%20%20%20%20username%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D) with
+```graphql
+{
+  notes(limit: 2, offset: 1) {
+    note {
+      title,
+      tags,
+      owner {
+        username
+      }
+    }
+  }
+}
+```
+
+and receive:
+```json
+{
+  "data": {
+    "notes": {
+      "note": [
+        {
+          "tags": [
+            "books"
+          ],
+          "title": "REST in Practice",
+          "owner": {
+          	"username": "test"
+          }
+        },
+        {
+          "tags": [
+            "books"
+          ],
+          "title": "Domain Driven Design",
+          "owner": {
+          	"username": "test"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+## Manual Installation & Usage with Nginx + Lua
+
+Install nginx-extras (to enable lua in nginx), lua-cjson lua-lpeg and lua5.1.
+
+```console
+$ apt-get install lua-cjson lua-lpeg lua5.1 nginx-extras
+```
 
 If you started with a location like this:
 

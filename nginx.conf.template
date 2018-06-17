@@ -1,0 +1,105 @@
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections 768;
+    # multi_accept on;
+}
+
+http {
+
+    ##
+    # Basic Settings
+    ##
+
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    # server_tokens off;
+
+    # server_names_hash_bucket_size 64;
+    # server_name_in_redirect off;
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    ##
+    # SSL Settings
+    ##
+
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # Dropping SSLv3, ref: POODLE
+    ssl_prefer_server_ciphers on;
+
+    ##
+    # Logging Settings
+    ##
+
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+
+
+    ##
+    # Gzip Settings
+    ##
+
+    gzip on;
+    gzip_disable "msie6";
+
+    # gzip_vary on;
+    # gzip_proxied any;
+    # gzip_comp_level 6;
+    # gzip_buffers 16 8k;
+    # gzip_http_version 1.1;
+    # gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    ##
+    # Virtual Host Configs
+    ##
+        server {
+            listen       $NGINX_SERVER_PORT;
+            server_name       $NGINX_SERVER_NAME;
+
+            gzip off;
+            gzip_proxied off;
+
+            proxy_buffering on;
+
+            log_subrequest  on;
+            lua_code_cache off;
+
+        	error_log /var/log/nginx/error.log $NGINX_LOG_LEVEL;
+
+            add_header "X-Upstream-Cache-Status" $upstream_cache_status always;
+
+            location /graphiql/ {
+            	root /usr/share/nginx/html;
+            	index index.html;
+            }
+
+        	location /graphql-hateoas-brige-api-gateway/ {
+        		internal;
+                rewrite ^/graphql-hateoas-brige-api-gateway/(.*)$ /$1  break;
+        		proxy_pass $NGINX_PROXY_PASS;
+                proxy_set_header Accept-Encoding "";
+                proxy_set_header Host      $NGINX_PROXY_HOST;
+                proxy_set_header X-Forwarded-Port      80;
+                proxy_set_header X-Forwarded-Proto      "http";
+        	}
+
+            location / {
+        		set $graphql_hateoas_api_gateway_prefix "/graphql-hateoas-brige-api-gateway";
+        		set $graphql_hateoas_hc_prefixes "$HYPERMEDIA_CONTROL_PREFIXES";
+        		content_by_lua_file "/etc/nginx/lua-graphql-hateoas-content.lua";
+        		header_filter_by_lua_file "/etc/nginx/lua-graphql-hateoas-header.lua";
+            }
+        }
+
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+
+

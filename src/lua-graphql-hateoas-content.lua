@@ -1,13 +1,9 @@
 
 local parseGraphQL = require 'parse-graphql'
 
---[[
-
-curl -s 'http://localhost:4778/api/hal/' -H 'Content-Type: application/json' --data-binary '{  notes(limit: 2, offset: 1) { _links { up { title } }, note { title, id, owner { username, id} } }}' | json
-
- ]]
-
 local prefix = ngx.var.graphql_hateoas_api_gateway_prefix
+local hcPrefix = ngx.var.graphql_hateoas_hc_prefixes or ""
+
 local totalGraphqlSubRequestsCount = 0
 local totalGraphqlIncludesCount = 0
 local totalGraphqlDepth = 0
@@ -109,8 +105,6 @@ evaluateTemplateUriAndAppendArguments = function(templateUri, arguments)
     return evaluatedUri
 end
 
-local hcPrefix = "https://hateoas-notes.herokuapp.com/rels/"
-
 extractSelectionSetFromValue = function(body, selectionSet)
     local root = {}
     for _, selection in ipairs(selectionSet.selections) do
@@ -196,6 +190,7 @@ mapResponseToGraphQLSelectionSet = function(requestUrl, res, selectionSet)
     if (errorMessage)
     then
         ngx.log(ngx.ERR, "invalid json from " .. requestUrl)
+        ngx.log(ngx.ERR, "received: " .. res.body)
         return root
     end
 
