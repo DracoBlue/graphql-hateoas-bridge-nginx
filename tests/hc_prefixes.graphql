@@ -1,0 +1,10 @@
+{
+  notes {
+	title,
+	id,
+	owner {
+	  username
+	  id
+	}
+  }
+}

@@ -1,8 +1,17 @@
 
+function splitString(string, sep)
+    local fields = {}
+    local pattern = string.format("([^%s]+)", sep)
+    string:gsub(pattern, function(c)
+        table.insert(fields, c)
+    end)
+    return fields
+end
+
 local parseGraphQL = require 'parse-graphql'
 
 local prefix = ngx.var.graphql_hateoas_api_gateway_prefix
-local hcPrefix = ngx.var.graphql_hateoas_hc_prefixes or ""
+local hcPrefixes = (ngx.var.graphql_hateoas_hc_prefixes and splitString(ngx.var.graphql_hateoas_hc_prefixes, " ")) or {}
 
 local totalGraphqlSubRequestsCount = 0
 local totalGraphqlIncludesCount = 0
@@ -132,8 +141,12 @@ extractSelectionSetFromValue = function(body, selectionSet)
                     root[keyName] = body[selection.name.value]
                 end
             end
-            local linkValue = body["_links"] and (body["_links"][selection.name.value] or body["_links"][hcPrefix .. selection.name.value])
-            local embeddedValue = body["_embedded"] and (body["_embedded"][selection.name.value] or body["_embedded"][hcPrefix .. selection.name.value])
+            local linkValue = nil
+            local embeddedValue = nil
+            for _, hcPrefix in pairs(hcPrefixes) do
+                linkValue = linkValue or (body["_links"] and (body["_links"][selection.name.value] or body["_links"][hcPrefix .. selection.name.value]))
+                embeddedValue = embeddedValue or (body["_embedded"] and (body["_embedded"][selection.name.value] or body["_embedded"][hcPrefix .. selection.name.value]))
+            end
 
             ngx.log(ngx.DEBUG, "selection arguments: " .. cjson.encode(selection.arguments))
 

@@ -1,0 +1,16 @@
+{
+  "_embedded": {
+    "http://example.org/rels/notes": [
+      {
+        "title": "note 1",
+        "id": 1,
+        "_embedded": {
+          "http://sub.example.org/rels/owner": {
+            "username": "test 3",
+            "id": 3
+          }
+        }
+      }
+    ]
+  }
+}
