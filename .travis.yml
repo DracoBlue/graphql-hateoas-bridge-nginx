@@ -4,13 +4,15 @@ before_install:
 services:
   - docker
 
-script: bash run-tests.sh
+script:
+  - bash run-tests.sh
+  - docker build -t dracoblue/graphql-hateoas-bridge-nginx .
 
 env:
   matrix:
     - NGINX_VERSION=1.13.3-1
-    - NGINX_VERSION=1.12.0-1
-    - NGINX_VERSION=1.11.9-0
-    - NGINX_VERSION=1.11.5-0
-    - NGINX_VERSION=1.10.1-3
-    - NGINX_VERSION=1.10.1-0
+#    - NGINX_VERSION=1.12.0-1
+#    - NGINX_VERSION=1.11.9-0
+#    - NGINX_VERSION=1.11.5-0
+#    - NGINX_VERSION=1.10.1-3
+#    - NGINX_VERSION=1.10.1-0
