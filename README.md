@@ -41,8 +41,7 @@ Setup the `docker-compose.yml` like this:
 ```yaml
 services:
   nginx:
-    build: ./
-    image: graphql-hateoas-bridge-nginx
+    image: dracoblue/graphql-hateoas-bridge-nginx
     environment:
       - "NGINX_PROXY_PASS=https://hateoas-notes.herokuapp.com"
       - "NGINX_PROXY_HOST=hateoas-notes.herokuapp.com"
