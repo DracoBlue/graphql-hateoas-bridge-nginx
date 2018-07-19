@@ -187,7 +187,7 @@ to work around this issue.
 
 ## TODOs
 
-See <https://github.com/DracoBlue/graphql-hateoas-brige-nginx/issues> for all open TODOs.
+See <https://github.com/DracoBlue/graphql-hateoas-bridge-nginx/issues> for all open TODOs.
 
 ## Changelog
 
