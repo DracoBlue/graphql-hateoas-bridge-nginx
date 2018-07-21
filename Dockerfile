@@ -18,10 +18,13 @@ ENV NGINX_SERVER_NAME=_ \
     NGINX_PROXY_CACHE_INACTIVE_TIME=60m \
     NGINX_PROXY_PASS=127.0.0.1:1337 \
     NGINX_PROXY_HOST=127.0.0.1 \
+    NGINX_ERROR_LOG=/var/log/nginx/error.log \
+    NGINX_ACCESS_LOG=/var/log/nginx/access.log \
     NGINX_LUA_CODE_CACHE=on \
     NGINX_LOG_SUBREQUEST=on \
     NGINX_LOG_LEVEL=warn \
     HYPERMEDIA_CONTROL_PREFIXES= \
+    DEBUG_MODE=off \
     GRAPHIQL_API_BASE_URL=/api/
 EXPOSE 80
-CMD bash -c "envsubst '\$HYPERMEDIA_CONTROL_PREFIXES `env | grep '^NGINX_' | cut -f 1 -d '=' | sed 's/NGINX/\$NGINX/g' | tr -s ' '`' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && envsubst '\$GRAPHIQL_API_BASE_URL' < /usr/share/nginx/html/graphiql/index.template > /usr/share/nginx/html/graphiql/index.html && nginx -g 'daemon off;'"
+CMD bash -c "envsubst '\$DEBUG_MODE \$HYPERMEDIA_CONTROL_PREFIXES `env | grep '^NGINX_' | cut -f 1 -d '=' | sed 's/NGINX/\$NGINX/g' | tr -s ' '`' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && envsubst '\$GRAPHIQL_API_BASE_URL' < /usr/share/nginx/html/graphiql/index.template > /usr/share/nginx/html/graphiql/index.html && nginx -g 'daemon off;'"

@@ -38,8 +38,8 @@ http {
     # Logging Settings
     ##
 
-    access_log /var/log/nginx/access.log;
-    error_log /var/log/nginx/error.log;
+    access_log $NGINX_ACCESS_LOG;
+    error_log $NGINX_ERROR_LOG;
 
 
     ##
@@ -74,7 +74,7 @@ http {
             log_subrequest  $NGINX_LOG_SUBREQUEST;
             lua_code_cache $NGINX_LUA_CODE_CACHE;
 
-        	error_log /var/log/nginx/error.log $NGINX_LOG_LEVEL;
+        	error_log $NGINX_ERROR_LOG $NGINX_LOG_LEVEL;
 
             add_header "X-Upstream-Cache-Status" $upstream_cache_status always;
 
@@ -104,6 +104,7 @@ http {
             location / {
         		set $graphql_hateoas_api_gateway_prefix "/graphql-hateoas-brige-api-gateway";
         		set $graphql_hateoas_hc_prefixes "$HYPERMEDIA_CONTROL_PREFIXES";
+        		set $graphql_hateoas_debug "$DEBUG_MODE";
         		content_by_lua_file "/etc/nginx/lua-graphql-hateoas-content.lua";
         		header_filter_by_lua_file "/etc/nginx/lua-graphql-hateoas-header.lua";
             }

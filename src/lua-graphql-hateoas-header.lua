@@ -1,10 +1,5 @@
-ngx.log(ngx.ERR, "headers?")
-ngx.log(ngx.ERR, tostring(ngx.headers_sent))
-ngx.log(ngx.ERR, tostring(ngx.ctx.res))
 if not ngx.headers_sent and ngx.ctx.res
 then
-    ngx.log(ngx.ERR, "headers!")
-
     local requestHeaders = {}
 
     local sanatizeHeaderFieldName = function(headerFieldName)

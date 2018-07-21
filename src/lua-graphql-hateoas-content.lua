@@ -1,3 +1,16 @@
+local debugMode = ngx.var.graphql_hateoas_debug == "on" or false
+
+local logger = {}
+
+if (debugMode)
+then
+    logger.debug = function(...)
+        ngx.log(ngx.WARN, table.concat({...}, " "))
+    end
+else
+    logger.debug = function()
+    end
+end
 
 function splitString(string, sep)
     local fields = {}
@@ -35,26 +48,26 @@ ngx.req.read_body()
 local requestBody = ngx.req.get_body_data()
 local variables = {}
 
-ngx.log(ngx.DEBUG, "requestBody: " .. requestBody)
+logger.debug("requestBody: " .. requestBody)
 
 local jsonParsedRequestBody, errorMessage = cjson.decode(requestBody)
 
 if (jsonParsedRequestBody and jsonParsedRequestBody.query)
 then
-    ngx.log(ngx.DEBUG, "requestBody was JSON: store query!")
+    logger.debug("requestBody was JSON: store query!")
     requestBody = jsonParsedRequestBody.query
 end
 
 if (jsonParsedRequestBody and jsonParsedRequestBody.variables)
 then
-    ngx.log(ngx.DEBUG, "requestBody was JSON: store variables!")
+    logger.debug("requestBody was JSON: store variables!")
     variables = jsonParsedRequestBody.variables
 end
 
 local graphQLRequest = parseGraphQL(requestBody)
 
 
-ngx.log(ngx.ERR, cjson.encode(graphQLRequest))
+logger.debug("request: " .. cjson.encode(graphQLRequest))
 
 local fragmentDefinitionSelections = {}
 local variableDefinitions = {}
@@ -62,7 +75,7 @@ local variableDefinitions = {}
 local parseFragmentDefinitions = function(graphQLRequest)
     for _, definition in ipairs(graphQLRequest.definitions) do
         if (definition.kind == "fragmentDefinition") then
-            ngx.log(ngx.ERR, "found fragmentdefinition: " .. definition.name.value)
+            logger.debug("found fragmentdefinition: " .. definition.name.value)
             fragmentDefinitionSelections[definition.name.value] = definition.selectionSet
         end
     end
@@ -75,7 +88,7 @@ local parseVariableDefinitions = function(graphQLRequest)
         if (definition.variableDefinitions) then
             for _, variableDefinition in ipairs(definition.variableDefinitions) do
                 if (variableDefinition.kind == "variableDefinition") then
-                    ngx.log(ngx.ERR, "found variableDefinition: " .. variableDefinition.variable.name.value)
+                    logger.debug("found variableDefinition: " .. variableDefinition.variable.name.value)
                     variableDefinitions[variableDefinition.variable.name.value] = variableDefinition
                 end
             end
@@ -123,9 +136,9 @@ extractSelectionSetFromValue = function(body, selectionSet)
             keyName = selection.alias.name.value
         end
     
-        ngx.log(ngx.ERR, "selection (kind:" .. selection.kind .. ", name:" .. selection.name.value .. ", keyName: " .. keyName .. ")")
+        logger.debug("selection (kind:" .. selection.kind .. ", name:" .. selection.name.value .. ", keyName: " .. keyName .. ")")
 
-        ngx.log(ngx.ERR, selection.kind)
+        logger.debug(selection.kind)
         if (selection.kind == "fragmentSpread" and fragmentDefinitionSelections[selection.name.value]) then
             -- FIXME: check typeCondition, too!
             local fragmentSpreadRoot = extractSelectionSetFromValue(body, fragmentDefinitionSelections[selection.name.value])
@@ -141,14 +154,14 @@ extractSelectionSetFromValue = function(body, selectionSet)
                     root[keyName] = body[selection.name.value]
                 end
             end
-            local linkValue = nil
-            local embeddedValue = nil
+            local linkValue = body["_links"] and body["_links"][selection.name.value]
+            local embeddedValue = body["_embedded"] and body["_embedded"][selection.name.value]
             for _, hcPrefix in pairs(hcPrefixes) do
-                linkValue = linkValue or (body["_links"] and (body["_links"][selection.name.value] or body["_links"][hcPrefix .. selection.name.value]))
-                embeddedValue = embeddedValue or (body["_embedded"] and (body["_embedded"][selection.name.value] or body["_embedded"][hcPrefix .. selection.name.value]))
+                linkValue = linkValue or (body["_links"] and body["_links"][hcPrefix .. selection.name.value])
+                embeddedValue = embeddedValue or (body["_embedded"] and body["_embedded"][hcPrefix .. selection.name.value])
             end
 
-            ngx.log(ngx.DEBUG, "selection arguments: " .. cjson.encode(selection.arguments))
+            logger.debug("selection arguments: " .. cjson.encode(selection.arguments))
 
             local argumentsQueryParts = {}
             if (selection.arguments) then
@@ -179,13 +192,13 @@ extractSelectionSetFromValue = function(body, selectionSet)
                     -- poor mans check for an array!
                     root[keyName] = {}
                     for _, linkValueItem in ipairs(linkValue) do
-                        ngx.log(ngx.DEBUG, "link Value: " .. cjson.encode(linkValueItem))
+                        logger.debug("link Value: " .. cjson.encode(linkValueItem))
                         local subRequestUri = linkValueItem["href"]
                         subRequestUri = evaluateTemplateUriAndAppendArguments(subRequestUri, argumentsQueryParts)
                         table.insert(root[keyName], mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet))
                     end
                 else
-                    ngx.log(ngx.DEBUG, "link Value: " .. cjson.encode(linkValue))
+                    logger.debug("link Value: " .. cjson.encode(linkValue))
                     local subRequestUri = linkValue["href"]
                     subRequestUri = evaluateTemplateUriAndAppendArguments(subRequestUri, argumentsQueryParts)
                     root[keyName] = mapRequestToGraphQLSelectionSet(subRequestUri, selection.selectionSet)
@@ -196,7 +209,7 @@ extractSelectionSetFromValue = function(body, selectionSet)
     return root
 end
 mapResponseToGraphQLSelectionSet = function(requestUrl, res, selectionSet)
-    ngx.log(ngx.DEBUG, "res.body: " .. res.body)
+    logger.debug("res.body: " .. res.body)
 
     local body, errorMessage = cjson.decode(res.body)
 
@@ -207,15 +220,15 @@ mapResponseToGraphQLSelectionSet = function(requestUrl, res, selectionSet)
         return root
     end
 
-    ngx.log(ngx.DEBUG, "selections set: " .. cjson.encode(selectionSet))
-    ngx.log(ngx.DEBUG, "parsed json: " .. cjson.encode(body))
+    logger.debug("selections set: " .. cjson.encode(selectionSet))
+    logger.debug("parsed json: " .. cjson.encode(body))
 
     return extractSelectionSetFromValue(body, selectionSet)
 end
 
 mapRequestToGraphQLSelectionSet = function(subRequestUri, selectionSet)
-    ngx.log(ngx.DEBUG, "subRequestUri: " .. subRequestUri)
-    ngx.log(ngx.DEBUG, "subRequestUrl: " .. prefix .. subRequestUri)
+    logger.debug("subRequestUri: " .. subRequestUri)
+    logger.debug("subRequestUrl: " .. prefix .. subRequestUri)
 
     totalGraphqlSubRequestsCount = totalGraphqlSubRequestsCount + 1
     totalGraphqlIncludesCount = totalGraphqlIncludesCount + 1
